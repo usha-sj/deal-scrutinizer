@@ -1,66 +1,89 @@
+import { CheckCircle, AlertCircle, XCircle, TrendingDown, Globe, X } from "lucide-react";
+
 export default function SidePanel({ claim, onClose }) {
   if (!claim) return null;
 
   const verdictConfig = {
     supported: {
-      badge: "Supported",
-      icon: "✅",
-      color: "text-green-300",
-      bg: "bg-green-950/40 border-green-800/50",
+      label: "Supported",
+      Icon: CheckCircle,
+      color: "var(--green-bright)",
+      bg: "var(--green-dim)",
+      border: "var(--green-border)",
     },
     unverified: {
-      badge: "Unverified",
-      icon: "⚠️",
-      color: "text-yellow-300",
-      bg: "bg-yellow-950/40 border-yellow-800/50",
+      label: "Unverified",
+      Icon: AlertCircle,
+      color: "var(--yellow-bright)",
+      bg: "var(--yellow-dim)",
+      border: "var(--yellow-border)",
     },
     contradicted: {
-      badge: "Contradicted",
-      icon: "🚨",
-      color: "text-red-300",
-      bg: "bg-red-950/40 border-red-800/50",
+      label: "Contradicted",
+      Icon: XCircle,
+      color: "var(--red-bright)",
+      bg: "var(--red-dim)",
+      border: "var(--red-border)",
     },
   };
 
   const typeConfig = {
-    financial: { label: "Financial", dot: "bg-red-500" },
-    market: { label: "Market", dot: "bg-yellow-500" },
-    competitive: { label: "Competitive", dot: "bg-blue-500" },
-    team: { label: "Team / Traction", dot: "bg-orange-500" },
+    financial: { label: "Financial", dot: "#f85149" },
+    market: { label: "Market", dot: "#d29922" },
+    competitive: { label: "Competitive", dot: "#58a6ff" },
+    team: { label: "Team / Traction", dot: "#e3b341" },
   };
 
   const verdict = verdictConfig[claim.verdict] || verdictConfig.unverified;
   const type = typeConfig[claim.type] || typeConfig.financial;
+  const { Icon } = verdict;
 
   return (
-    <div className="h-full flex flex-col bg-gray-900 border-l border-gray-800/60">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-800/60">
+    <div className="h-full flex flex-col"
+      style={{ background: "var(--bg-surface)", borderLeft: "1px solid var(--border-default)" }}>
+
+      {/* Panel header */}
+      <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
+        style={{ borderBottom: "1px solid var(--border-subtle)" }}>
         <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${type.dot} flex-shrink-0`} />
-          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+          <div className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{ background: type.dot }} />
+          <span className="text-xs font-semibold tracking-wider uppercase"
+            style={{ color: "var(--text-muted)" }}>
             {type.label}
           </span>
         </div>
         <button
           onClick={onClose}
-          className="w-7 h-7 flex items-center justify-center rounded-md text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+          className="w-7 h-7 flex items-center justify-center rounded-md transition-colors"
+          style={{ color: "var(--text-muted)" }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = "var(--bg-hover)";
+            e.currentTarget.style.color = "var(--text-primary)";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = "var(--text-muted)";
+          }}
         >
-          ✕
+          <X size={14} />
         </button>
       </div>
 
-      {/* Content */}
+      {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto">
         <div className="px-5 py-5 space-y-5">
 
-          {/* Claim Quote */}
+          {/* Claim */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            <p className="text-xs font-semibold tracking-wider uppercase mb-2"
+              style={{ color: "var(--text-muted)" }}>
               Claim
             </p>
-            <div className="bg-gray-800/50 rounded-lg px-4 py-3 border border-gray-700/50">
-              <p className="text-gray-200 text-sm leading-relaxed italic">
+            <div className="px-4 py-3 rounded-lg"
+              style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
+              <p className="text-sm leading-relaxed italic"
+                style={{ color: "var(--text-primary)" }}>
                 {`"${claim.quote}"`}
               </p>
             </div>
@@ -68,53 +91,65 @@ export default function SidePanel({ claim, onClose }) {
 
           {/* Verdict */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            <p className="text-xs font-semibold tracking-wider uppercase mb-2"
+              style={{ color: "var(--text-muted)" }}>
               Verdict
             </p>
-            <div className={`rounded-lg px-4 py-3 border ${verdict.bg}`}>
+            <div className="px-4 py-3 rounded-lg"
+              style={{
+                background: verdict.bg,
+                border: `1px solid ${verdict.border}`,
+              }}>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-base">{verdict.icon}</span>
-                <span className={`text-sm font-semibold ${verdict.color}`}>
-                  {verdict.badge}
+                <Icon size={13} style={{ color: verdict.color }} />
+                <span className="text-sm font-semibold" style={{ color: verdict.color }}>
+                  {verdict.label}
                 </span>
               </div>
-              <p className="text-gray-300 text-sm">{claim.short_verdict}</p>
+              <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                {claim.short_verdict}
+              </p>
             </div>
           </div>
 
           {/* Analysis */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            <p className="text-xs font-semibold tracking-wider uppercase mb-2"
+              style={{ color: "var(--text-muted)" }}>
               Analysis
             </p>
-            <p className="text-gray-300 text-sm leading-relaxed">
+            <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
               {claim.analysis}
             </p>
           </div>
 
           {/* Bear Case */}
-          <div className="bg-red-950/20 border border-red-900/30 rounded-lg px-4 py-4">
+          <div className="px-4 py-4 rounded-lg"
+            style={{ background: "var(--red-dim)", border: "1px solid var(--red-border)" }}>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-sm">🐻</span>
-              <p className="text-xs font-semibold text-red-400 uppercase tracking-wider">
+              <TrendingDown size={12} style={{ color: "var(--red-bright)" }} />
+              <p className="text-xs font-semibold tracking-wider uppercase"
+                style={{ color: "var(--red-bright)" }}>
                 Bear Case
               </p>
             </div>
-            <p className="text-gray-300 text-sm leading-relaxed">
+            <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
               {claim.bear_case}
             </p>
           </div>
 
           {/* Live Market Data */}
           {claim.web_findings && claim.web_findings.trim().length > 0 && (
-            <div className="bg-blue-950/20 border border-blue-900/30 rounded-lg px-4 py-4">
+            <div className="px-4 py-4 rounded-lg"
+              style={{ background: "var(--blue-dim)", border: "1px solid var(--blue-border)" }}>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm">🌐</span>
-                <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider">
+                <Globe size={12} style={{ color: "var(--blue-bright)" }} />
+                <p className="text-xs font-semibold tracking-wider uppercase"
+                  style={{ color: "var(--blue-bright)" }}>
                   Live Market Data
                 </p>
               </div>
-              <p className="text-gray-300 text-sm leading-relaxed">
+              <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                 {claim.web_findings}
               </p>
             </div>
@@ -122,10 +157,11 @@ export default function SidePanel({ claim, onClose }) {
         </div>
       </div>
 
-      {/* Footer hint */}
-      <div className="px-5 py-3 border-t border-gray-800/60">
-        <p className="text-gray-600 text-xs text-center">
-          Click any highlight to analyze that claim
+      {/* Footer */}
+      <div className="px-5 py-3 flex-shrink-0"
+        style={{ borderTop: "1px solid var(--border-subtle)" }}>
+        <p className="text-xs text-center" style={{ color: "var(--text-muted)" }}>
+          Click any highlighted phrase to analyze that claim
         </p>
       </div>
     </div>

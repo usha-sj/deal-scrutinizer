@@ -2,9 +2,15 @@
 import { useEffect, useRef } from "react";
 import { injectHighlights } from "../utils/highlight";
 
+const legendItems = [
+  { color: "#f85149", label: "Financial" },
+  { color: "#58a6ff", label: "Competitive" },
+  { color: "#d29922", label: "Market" },
+  { color: "#e3b341", label: "Team" },
+];
+
 export default function Document({ text, claims, onClaimClick, activeClaim }) {
   const containerRef = useRef(null);
-
   const highlightedHtml = injectHighlights(text, claims);
 
   useEffect(() => {
@@ -14,9 +20,7 @@ export default function Document({ text, claims, onClaimClick, activeClaim }) {
     const handleClick = (e) => {
       const span = e.target.closest("[data-claim-id]");
       if (!span) return;
-
-      const claimId = span.getAttribute("data-claim-id");
-      const claim = claims.find((c) => c.id === claimId);
+      const claim = claims.find((c) => c.id === span.getAttribute("data-claim-id"));
       if (claim) onClaimClick(claim);
     };
 
@@ -25,38 +29,38 @@ export default function Document({ text, claims, onClaimClick, activeClaim }) {
   }, [claims, onClaimClick]);
 
   return (
-    <div className="h-full flex flex-col bg-gray-950">
-      {/* Document Header */}
-      <div className="px-6 py-3 border-b border-gray-800 flex items-center gap-4">
-        <p className="text-gray-500 text-xs uppercase tracking-wider">
+    <div className="h-full flex flex-col" style={{ background: "var(--bg-base)" }}>
+
+      {/* Document toolbar */}
+      <div className="flex items-center gap-4 px-6 py-2.5 flex-shrink-0"
+        style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+        <span className="text-xs font-medium tracking-wider uppercase"
+          style={{ color: "var(--text-muted)" }}>
           Document
-        </p>
-        <div className="flex items-center gap-3 text-xs">
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-1 bg-red-500 rounded-full inline-block" />
-            <span className="text-gray-500">Financial</span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-1 bg-blue-500 rounded-full inline-block" />
-            <span className="text-gray-500">Competitive</span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-1 bg-yellow-500 rounded-full inline-block" />
-            <span className="text-gray-500">Market</span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-1 bg-orange-500 rounded-full inline-block" />
-            <span className="text-gray-500">Team</span>
-          </span>
+        </span>
+        <div className="w-px h-3" style={{ background: "var(--border-default)" }} />
+        <div className="flex items-center gap-4">
+          {legendItems.map(({ color, label }) => (
+            <span key={label} className="flex items-center gap-1.5 text-xs"
+              style={{ color: "var(--text-muted)" }}>
+              <span className="inline-block rounded-sm"
+                style={{ width: "10px", height: "3px", background: color }} />
+              {label}
+            </span>
+          ))}
         </div>
       </div>
 
-      {/* Document Text */}
-      <div className="flex-1 overflow-y-auto px-8 py-6">
+      {/* Text content */}
+      <div className="flex-1 overflow-y-auto px-8 py-7">
         <div
-        ref={containerRef}
-        className="max-w-3xl mx-auto text-gray-300 text-sm leading-7 font-sans whitespace-pre-wrap"
-        dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+          ref={containerRef}
+          className="max-w-2xl mx-auto text-sm leading-7 whitespace-pre-wrap"
+          style={{
+            color: "var(--text-secondary)",
+            fontFamily: "'Inter', sans-serif",
+          }}
+          dangerouslySetInnerHTML={{ __html: highlightedHtml }}
         />
       </div>
     </div>

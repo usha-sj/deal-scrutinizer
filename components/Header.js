@@ -1,76 +1,121 @@
-export default function Header({ summary, companyName, onReset, onToggleQuickScan, quickScanActive }) {  const verdictConfig = {
+"use client";
+import { CheckCircle, AlertTriangle, XCircle, ClipboardList, ArrowLeft} from "lucide-react";
+
+export default function Header({ summary, companyName, onReset, onToggleQuickScan, quickScanActive }) {
+  const verdictConfig = {
     proceed: {
       label: "Proceed to Diligence",
-      icon: "✅",
-      color: "text-green-300 bg-green-950/40 border-green-800/50",
+      Icon: CheckCircle,
+      color: "text-emerald-400",
+      bg: "bg-emerald-950/40 border-emerald-800/40",
     },
     investigate_further: {
       label: "Investigate Further",
-      icon: "⚠️",
-      color: "text-yellow-300 bg-yellow-950/40 border-yellow-800/50",
+      Icon: AlertTriangle,
+      color: "text-amber-400",
+      bg: "bg-amber-950/40 border-amber-800/40",
     },
     pass: {
       label: "Pass",
-      icon: "🚫",
-      color: "text-red-300 bg-red-950/40 border-red-800/50",
+      Icon: XCircle,
+      color: "text-red-400",
+      bg: "bg-red-950/40 border-red-800/40",
     },
   };
 
   const verdict = verdictConfig[summary.overall_recommendation] || verdictConfig.investigate_further;
+  const { Icon } = verdict;
 
-    return (
-    <div className="bg-gray-900 border-b border-gray-800/60 px-6 py-3 flex flex-col gap-1.5">
-        {/* Top row */}
-        <div className="flex items-center gap-4">
-        <h1 className="text-white font-bold text-base flex-shrink-0">
-            {companyName || "Deal Analysis"}
+  return (
+    <header style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border-default)" }}
+      className="px-6 py-3 flex flex-col gap-1.5 flex-shrink-0">
+
+      {/* Row 1 */}
+      <div className="flex items-center gap-3">
+
+        {/* Logo mark */}
+        <div className="flex items-center gap-2 mr-2">
+            <img 
+                src="/sagard.png" 
+                alt="Sagard" 
+                style={{ height: "28px" }}></img>        
+        </div>
+
+        {/* Divider */}
+        <div className="w-px h-4" style={{ background: "var(--border-default)" }} />
+
+        {/* Company name */}
+        <h1 className="font-semibold text-sm truncate max-w-[220px]"
+          style={{ color: "var(--text-primary)" }}>
+          {companyName || "Deal Analysis"}
         </h1>
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border flex-shrink-0 ${verdict.color}`}>
-            {verdict.icon} {verdict.label}
+
+        {/* Verdict badge */}
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border flex-shrink-0 ${verdict.bg} ${verdict.color}`}>
+          <Icon size={11} />
+          {verdict.label}
         </span>
 
-        {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Counts */}
-        <div className="flex items-center gap-5 flex-shrink-0">
-            {[
-            { val: summary.total_claims, label: "Claims", color: "text-white" },
-            { val: summary.contradicted, label: "Contradicted", color: "text-red-400" },
-            { val: summary.unverified, label: "Unverified", color: "text-yellow-400" },
-            { val: summary.supported, label: "Supported", color: "text-green-400" },
-            ].map((s) => (
+        {/* Claim stats */}
+        <div className="flex items-center gap-6 mr-3">
+          {[
+            { val: summary.total_claims, label: "Claims", color: "var(--text-primary)" },
+            { val: summary.contradicted, label: "Contradicted", color: "var(--red-bright)" },
+            { val: summary.unverified, label: "Unverified", color: "var(--yellow-bright)" },
+            { val: summary.supported, label: "Supported", color: "var(--green-bright)" },
+          ].map((s) => (
             <div key={s.label} className="text-center">
-                <p className={`font-bold text-lg leading-none ${s.color}`}>{s.val}</p>
-                <p className="text-gray-500 text-xs mt-0.5">{s.label}</p>
+              <p className="font-bold text-base leading-none" style={{ color: s.color }}>{s.val}</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{s.label}</p>
             </div>
-            ))}
+          ))}
         </div>
+
+        {/* Divider */}
+        <div className="w-px h-6" style={{ background: "var(--border-default)" }} />
 
         {/* Buttons */}
-        <button
+        <div className="flex items-center gap-2 ml-3">
+          <button
             onClick={onToggleQuickScan}
-            className={`flex-shrink-0 px-3 py-1.5 text-xs rounded-lg transition-colors border ${
-            quickScanActive
-                ? "bg-blue-900/50 text-blue-300 border-blue-700/50"
-                : "bg-gray-800 text-gray-400 hover:text-gray-200 border-gray-700/50"
-            }`}
-        >
-            📋 Quick Scan
-        </button>
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 border"
+            style={quickScanActive ? {
+              background: "var(--accent-gold-dim)",
+              borderColor: "var(--accent-gold-border)",
+              color: "var(--accent-gold)",
+            } : {
+              background: "var(--bg-elevated)",
+              borderColor: "var(--border-default)",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <ClipboardList size={12} />
+            Quick Scan
+          </button>
 
-        <button
+          <button
             onClick={onReset}
-            className="flex-shrink-0 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 text-xs rounded-lg transition-colors border border-gray-700/50"
-        >
-            ← New Deal
-        </button>
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 border"
+            style={{
+              background: "var(--bg-elevated)",
+              borderColor: "var(--border-default)",
+              color: "var(--text-secondary)",
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = "var(--text-primary)"}
+            onMouseLeave={e => e.currentTarget.style.color = "var(--text-secondary)"}
+          >
+            <ArrowLeft size={12} />
+            New Deal
+          </button>
         </div>
+      </div>
 
-        {/* Headline finding — full width second line */}
-        <p className="text-gray-400 text-sm leading-relaxed">
+      {/* Row 2: headline */}
+      <p className="text-xs leading-relaxed pl-10" style={{ color: "var(--text-secondary)" }}>
         {summary.headline_finding}
-        </p>
-    </div>
-    );
+      </p>
+    </header>
+  );
 }

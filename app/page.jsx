@@ -5,20 +5,23 @@ import Document from "../components/Document";
 import SidePanel from "../components/SidePanel";
 import Header from "../components/Header";
 import Loading from "../components/Loading";
-import QuickScan from "../components/QuickScan";
+import {
+  ClipboardList, X, Calculator, MessageSquare, AlertTriangle,
+  TrendingUp, DollarSign, BarChart2, Activity
+} from "lucide-react";
 
 export default function Home() {
   const [state, setState] = useState("upload");
   const [analysis, setAnalysis] = useState(null);
   const [documentText, setDocumentText] = useState("");
   const [activeClaim, setActiveClaim] = useState(null);
-  const [rightPanel, setRightPanel] = useState("none"); // "none" | "claim" | "quickscan"
+  const [rightPanel, setRightPanel] = useState("none");
 
   const handleAnalysisComplete = (data, text) => {
     setAnalysis(data);
     setDocumentText(text);
     setState("results");
-    setRightPanel("quickscan"); // open quick scan by default
+    setRightPanel("quickscan");
   };
 
   const handleAnalyzing = (isAnalyzing) => {
@@ -53,12 +56,7 @@ export default function Home() {
   };
 
   if (state === "upload") {
-    return (
-      <Upload
-        onAnalysisComplete={handleAnalysisComplete}
-        onAnalyzing={handleAnalyzing}
-      />
-    );
+    return <Upload onAnalysisComplete={handleAnalysisComplete} onAnalyzing={handleAnalyzing} />;
   }
 
   if (state === "loading") return <Loading />;
@@ -67,7 +65,7 @@ export default function Home() {
   const showRightPanel = rightPanel !== "none";
 
   return (
-    <div className="flex flex-col h-screen bg-gray-950 overflow-hidden">
+    <div className="flex flex-col h-screen overflow-hidden" style={{ background: "var(--bg-base)" }}>
       <Header
         summary={analysis.summary}
         companyName={analysis.company_name}
@@ -77,10 +75,7 @@ export default function Home() {
       />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Left: Document */}
-        <div className={`overflow-hidden transition-all duration-300 ${
-          showRightPanel ? "w-3/5" : "w-full"
-        }`}>
+        <div className={`overflow-hidden transition-all duration-300 ${showRightPanel ? "w-3/5" : "w-full"}`}>
           <Document
             text={documentText}
             claims={analysis.claims}
@@ -89,20 +84,13 @@ export default function Home() {
           />
         </div>
 
-        {/* Right: Panel (Quick Scan or Claim) */}
         {showRightPanel && (
-          <div className="w-2/5 overflow-hidden border-l border-gray-800/60">
+          <div className="w-2/5 overflow-hidden" style={{ borderLeft: "1px solid var(--border-default)" }}>
             {rightPanel === "quickscan" && (
-              <QuickScanPanel
-                quickScan={analysis.quick_scan}
-                onClose={handleClosePanel}
-              />
+              <QuickScanPanel quickScan={analysis.quick_scan} onClose={handleClosePanel} />
             )}
             {rightPanel === "claim" && activeClaim && (
-              <SidePanel
-                claim={activeClaim}
-                onClose={handleClosePanel}
-              />
+              <SidePanel claim={activeClaim} onClose={handleClosePanel} />
             )}
           </div>
         )}
@@ -111,134 +99,186 @@ export default function Home() {
   );
 }
 
-// QuickScan as a side panel with scroll
+function MetricCard({ label, value }) {
+  const disclosed = value && value !== "Not disclosed";
+  return (
+    <div className="px-3 py-2.5 rounded-lg"
+      style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
+      <p className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>{label}</p>
+      <p className={`text-xs font-semibold leading-snug ${!disclosed ? "italic" : ""}`}
+        style={{ color: disclosed ? "var(--text-primary)" : "var(--text-muted)" }}>
+        {value || "Not disclosed"}
+      </p>
+    </div>
+  );
+}
+
+function SectionLabel({ icon: Icon, label, color }) {
+  return (
+    <div className="flex items-center gap-1.5 mb-2">
+      <Icon size={11} style={{ color: color || "var(--text-muted)" }} />
+      <p className="text-xs font-semibold tracking-wider uppercase"
+        style={{ color: color || "var(--text-muted)" }}>
+        {label}
+      </p>
+    </div>
+  );
+}
+
 function QuickScanPanel({ quickScan, onClose }) {
   if (!quickScan) return null;
 
-  const metrics = [
+  const financialMetrics = [
     { label: "EBITDA", value: quickScan.ebitda },
     { label: "EBITDA Margin", value: quickScan.ebitda_margin },
+    { label: "Net Revenue", value: quickScan.net_revenue },
     { label: "Revenue Growth", value: quickScan.revenue_growth },
+    { label: "Operating Cash Flow", value: quickScan.operating_cash_flow },
     { label: "FCF Profile", value: quickScan.fcf_profile },
+    { label: "CapEx ($)", value: quickScan.capex_absolute },
     { label: "CapEx Intensity", value: quickScan.capex_intensity },
+    { label: "Debt", value: quickScan.debt },
+    { label: "Debt / EBITDA", value: quickScan.debt_ebitda },
     { label: "Customer Concentration", value: quickScan.customer_concentration },
     { label: "Market Size", value: quickScan.market_size },
   ];
 
-  const isDisclosed = (val) => val && val !== "Not disclosed";
-
   return (
-    <div className="h-full flex flex-col bg-gray-900">
+    <div className="h-full flex flex-col" style={{ background: "var(--bg-surface)" }}>
+
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-800/60">
+      <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
+        style={{ borderBottom: "1px solid var(--border-subtle)" }}>
         <div className="flex items-center gap-2">
-          <span className="text-sm">📋</span>
-          <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+          <ClipboardList size={13} style={{ color: "var(--accent-gold)" }} />
+          <span className="text-xs font-semibold tracking-wider uppercase"
+            style={{ color: "var(--text-secondary)" }}>
             Quick Scan
           </span>
-          <span className="text-xs text-gray-500 ml-1">PE First Pass</span>
+          <span className="text-xs px-2 py-0.5 rounded"
+            style={{
+              color: "var(--accent-gold)",
+              background: "var(--accent-gold-dim)",
+              border: "1px solid var(--accent-gold-border)",
+              fontSize: "10px",
+              letterSpacing: "0.05em",
+            }}>
+            PE First Pass
+          </span>
         </div>
         <button
           onClick={onClose}
-          className="w-7 h-7 flex items-center justify-center rounded-md text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+          className="w-7 h-7 flex items-center justify-center rounded-md transition-colors"
+          style={{ color: "var(--text-muted)" }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = "var(--bg-hover)";
+            e.currentTarget.style.color = "var(--text-primary)";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = "var(--text-muted)";
+          }}
         >
-          ✕
+          <X size={14} />
         </button>
       </div>
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="px-5 py-4 space-y-5">
+        <div className="px-5 py-5 space-y-6">
 
-          {/* Key Metrics */}
+          {/* Financial Metrics */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              Key Metrics
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              {metrics.map((m) => (
-                <div
-                  key={m.label}
-                  className="bg-gray-800/50 rounded-lg px-3 py-2.5 border border-gray-700/50"
-                >
-                  <p className="text-gray-500 text-xs mb-0.5">{m.label}</p>
-                  <p className={`text-sm font-semibold ${
-                    isDisclosed(m.value) ? "text-white" : "text-gray-600 italic text-xs font-normal"
-                  }`}>
-                    {m.value || "Not disclosed"}
-                  </p>
-                </div>
+            <SectionLabel icon={DollarSign} label="Key Metrics" />
+            <div className="grid grid-cols-2 gap-2">
+              {financialMetrics.map((m) => (
+                <MetricCard key={m.label} label={m.label} value={m.value} />
               ))}
             </div>
           </div>
 
           {/* Organic vs Acquisition */}
-          <div className="bg-gray-800/50 rounded-lg px-4 py-3 border border-gray-700/50">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Organic vs Acquisition Growth
-            </p>
-            <p className={`text-sm ${isDisclosed(quickScan.organic_vs_acquisition) ? "text-gray-300" : "text-gray-600 italic"}`}>
-              {quickScan.organic_vs_acquisition || "Not disclosed"}
-            </p>
+          <div>
+            <SectionLabel icon={TrendingUp} label="Organic vs Acquisition Growth" />
+            <div className="px-4 py-3 rounded-lg"
+              style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
+              <p className="text-sm leading-relaxed"
+                style={{
+                  color: quickScan.organic_vs_acquisition && quickScan.organic_vs_acquisition !== "Not disclosed"
+                    ? "var(--text-secondary)"
+                    : "var(--text-muted)",
+                  fontStyle: quickScan.organic_vs_acquisition && quickScan.organic_vs_acquisition !== "Not disclosed"
+                    ? "normal" : "italic",
+                }}>
+                {quickScan.organic_vs_acquisition || "Not disclosed"}
+              </p>
+            </div>
           </div>
 
           {/* Competitive Moat */}
-          <div className="bg-gray-800/50 rounded-lg px-4 py-3 border border-gray-700/50">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Competitive Moat
-            </p>
-            <p className="text-gray-300 text-sm leading-relaxed">
-              {quickScan.key_differentiator || "Not identified"}
-            </p>
+          <div>
+            <SectionLabel icon={BarChart2} label="Competitive Moat" />
+            <div className="px-4 py-3 rounded-lg"
+              style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
+              <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                {quickScan.key_differentiator || "Not identified"}
+              </p>
+            </div>
           </div>
 
           {/* Management Flag */}
-          <div className="bg-gray-800/50 rounded-lg px-4 py-3 border border-gray-700/50">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Management Flag
-            </p>
-            <p className="text-gray-300 text-sm leading-relaxed">
-              {quickScan.management_flag || "Not identified"}
-            </p>
+          <div>
+            <SectionLabel icon={Activity} label="Management Flag" />
+            <div className="px-4 py-3 rounded-lg"
+              style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
+              <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                {quickScan.management_flag || "Not identified"}
+              </p>
+            </div>
           </div>
 
           {/* Returns Sanity Check */}
           {quickScan.returns_sanity_check && (
-            <div className="bg-purple-950/30 border border-purple-900/40 rounded-lg px-4 py-3">
-              <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-1.5">
-                📐 Returns Sanity Check
-              </p>
-              <p className="text-gray-300 text-sm leading-relaxed">
-                {quickScan.returns_sanity_check}
-              </p>
+            <div>
+              <SectionLabel icon={Calculator} label="Returns Sanity Check" color="var(--purple-bright)" />
+              <div className="px-4 py-3 rounded-lg"
+                style={{ background: "var(--purple-dim)", border: "1px solid var(--purple-border)" }}>
+                <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                  {quickScan.returns_sanity_check}
+                </p>
+              </div>
             </div>
           )}
 
           {/* Associate Quick Take */}
-          <div className="bg-blue-950/30 border border-blue-900/40 rounded-lg px-4 py-3">
-            <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-1.5">
-              💬 Associate Quick Take
-            </p>
-            <p className="text-gray-300 text-sm leading-relaxed">
-              {quickScan.quick_take || ""}
-            </p>
+          <div>
+            <SectionLabel icon={MessageSquare} label="Associate Quick Take" color="var(--blue-bright)" />
+            <div className="px-4 py-3 rounded-lg"
+              style={{ background: "var(--blue-dim)", border: "1px solid var(--blue-border)" }}>
+              <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                {quickScan.quick_take || ""}
+              </p>
+            </div>
           </div>
 
-          {/* Missing Metrics */}
+          {/* Missing from Deck */}
           {quickScan.missing_metrics?.length > 0 && (
-            <div className="bg-red-950/20 border border-red-900/30 rounded-lg px-4 py-3">
-              <p className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-2">
-                ⚠️ Missing from Deck
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {quickScan.missing_metrics.map((metric, i) => (
-                  <span
-                    key={i}
-                    className="text-xs bg-red-950/50 text-red-300 px-2 py-0.5 rounded-full border border-red-900/40"
-                  >
-                    {metric}
-                  </span>
-                ))}
+            <div>
+              <SectionLabel icon={AlertTriangle} label="Missing from Deck" color="var(--red-bright)" />
+              <div className="px-4 py-3 rounded-lg"
+                style={{ background: "var(--red-dim)", border: "1px solid var(--red-border)" }}>
+                <div className="flex flex-wrap gap-1.5">
+                  {quickScan.missing_metrics.map((metric, i) => (
+                    <span key={i} className="text-xs px-2 py-0.5 rounded-full"
+                      style={{
+                        background: "rgba(248,81,73,0.12)",
+                        color: "var(--red-bright)",
+                        border: "1px solid var(--red-border)",
+                      }}>
+                      {metric}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           )}

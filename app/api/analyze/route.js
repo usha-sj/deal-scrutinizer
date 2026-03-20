@@ -3,7 +3,7 @@ function buildChunkContent(chunk, prompt) {
 
   content.push({
     type: "text",
-    text: `You are analyzing pages ${chunk.pageRange} of a CIM (Confidential Information Memorandum). Each page is shown as an image with its extracted text. Read everything visible — text, charts, tables, financial figures.\n\nExtracted text for these pages:\n${chunk.text.slice(0, 3000)}`,
+    text: `You are analyzing pages ${chunk.pageRange} of a CIM (Confidential Information Memorandum). Each page is shown as an image with its extracted text. Read everything visible — text, charts, tables, financial figures.\n\nExtracted text for these pages:\n${chunk.text.slice(0, 6000)}`,
   });
 
   for (const { page, base64 } of chunk.images) {
@@ -150,6 +150,7 @@ WEB SEARCH: Use for 2-3 most important claims only. Search for:
 - Market size figures + their source
 - Named executives to verify backgrounds
 - Fee comparisons to market rates
+- For any property or brand described as prestigious or market-leading: search for its actual history including any bankruptcies, ownership changes, or repositioning events
 
 VERDICT RULES:
 - CONTRADICTED: external evidence materially conflicts — wrong direction, wrong order of magnitude, demonstrably false. Minor timeline differences are NOT contradictions.
@@ -180,16 +181,22 @@ const QUICK_SCAN_PROMPT = `You are a PE associate doing a 60-second financial fl
 
 Extract exactly these fields. Use "Not disclosed" if genuinely absent. Never fabricate numbers.
 
-PE FIRST-PASS CHECKLIST:
-- EBITDA and margins (target: 20%+ margins)
-- Revenue growth (target: 10%+ CAGR)
-- FCF profile (EBITDA minus CapEx — key for LBO math)
-- CapEx intensity (target: under 5% of revenue)
-- Customer concentration (top customer as % of revenue)
-- Organic vs acquisition-driven growth (flag if unclear)
-- Market tailwinds (is the industry growing?)
-- Competitive moat (why does this business exist?)
-
+PE FIRST-PASS CHECKLIST — extract ALL of these if present:
+- EBITDA: LTM or most recent year figure
+- EBITDA margin: EBITDA as % of net revenue
+- Net revenue: most recent actual + projected figures
+- Revenue growth: historical CAGR and projected CAGR
+- Operating cash flow: net cash from operating activities
+- FCF profile: operating cash flow minus CapEx
+- CapEx absolute: dollar figure for most recent year
+- CapEx intensity: CapEx as % of net revenue
+- Customer concentration: top customer as % of revenue
+- Debt: total notes payable / long-term debt figure
+- Debt/EBITDA: calculate if both figures available
+- Organic vs acquisition growth: flag if growth includes acquisitions
+- Market size: any TAM or addressable market figure cited
+- Key differentiator: one sentence competitive moat
+- Management flag: biggest team risk or strength
 RETURNS SANITY CHECK: If EBITDA and valuation/size data is available, do rough LBO math:
 - Assume 5x leverage, 5-year hold, same exit multiple
 - Does a 20% IRR seem achievable?
@@ -205,17 +212,22 @@ Return ONLY valid JSON:
     "ebitda": "string",
     "ebitda_margin": "string",
     "revenue_growth": "string",
+    "net_revenue": "string",
     "fcf_profile": "string",
+    "operating_cash_flow": "string",
     "capex_intensity": "string",
+    "capex_absolute": "string",
     "customer_concentration": "string",
-    "organic_vs_acquisition": "string",
     "market_size": "string",
+    "debt": "string",
+    "debt_ebitda": "string",
+    "organic_vs_acquisition": "string",
     "key_differentiator": "string",
     "management_flag": "string",
     "returns_sanity_check": "string",
     "missing_metrics": ["string"],
     "quick_take": "2-3 sentence honest first impression as a PE associate"
-  }
+}
 }`;
 
 export async function POST(request) {
@@ -233,16 +245,20 @@ export async function POST(request) {
     // Fire everything in parallel:
     // - Quick scan on full text (no images needed, just text)
     // - Claims analysis on each chunk (text + images together)
+    const quickScanText = fullText.length > 12000
+    ? fullText.slice(0, 2000) + 
+        "\n\n[...]\n\n" + 
+        fullText.slice(Math.floor(fullText.length * 0.75), Math.floor(fullText.length * 0.75) + 6000)
+    : fullText;
+
     const [quickScanResult, ...claimResults] = await Promise.all([
-      // Quick scan — text only, no images needed
-      callClaude(
-        `${QUICK_SCAN_PROMPT}\n\nFULL DOCUMENT TEXT:\n${fullText.slice(0, 8000)}`,
+    callClaude(
+        `${QUICK_SCAN_PROMPT}\n\nFULL DOCUMENT TEXT (executive summary + financials):\n${quickScanText}`,
         1500
-      ),
-      // Each chunk analyzed with its own pages + images
-      ...chunks.map((chunk) =>
+    ),
+    ...chunks.map((chunk) =>
         callClaude(buildChunkContent(chunk, CLAIMS_PROMPT), 4000)
-      ),
+    ),
     ]);
 
     console.log("quickScanResult:", JSON.stringify(quickScanResult)?.slice(0, 200));
@@ -290,9 +306,8 @@ export async function POST(request) {
     }
 
     const headline =
-      quickScan?.quick_take?.split(".")?.[0] ||
-      `${contradicted} contradicted · ${unverified} unverified across ${allClaims.length} claims`;
-
+        quickScan?.quick_take?.slice(0, 200) ||
+            `${contradicted} contradicted · ${unverified} unverified across ${allClaims.length} claims`;
     return Response.json({
       company_name: quickScanResult?.company_name || "Company",
       quick_scan: quickScan,
